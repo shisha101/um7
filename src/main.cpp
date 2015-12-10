@@ -295,7 +295,7 @@ int main(int argc, char **argv)
   int32_t baud;
   ros::param::param<std::string>("~port", port, "/dev/ttyUSB0");
   ros::param::param<int32_t>("~baud", baud, 115200);
-  ros::param::param<std::string>("~frame_name", frame_name, "imu_chr_position");
+  ros::param::param<std::string>("~frame_name", frame_name, "imu_chr_position_link");
 
   serial::Serial ser;
   ser.setPort(port);
