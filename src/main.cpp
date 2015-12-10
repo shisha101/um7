@@ -8,7 +8,7 @@
  *  \copyright  Copyright (c) 2013, Clearpath Robotics, Inc.
  *  \author     Alex Brown <rbirac@cox.net>		    (adapted to UM7)
  *  \copyright  Copyright (c) 2015, Alex Brown.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -19,18 +19,18 @@
  *     * Neither the name of Clearpath Robotics, Inc. nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL CLEARPATH ROBOTICS, INC. OR ALEX BROWN BE LIABLE 
+ * DISCLAIMED. IN NO EVENT SHALL CLEARPATH ROBOTICS, INC. OR ALEX BROWN BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  * Please send comments, questions, or patches to Alex Brown  rbirac@cox.net
  *
  */
@@ -291,10 +291,11 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "um7_driver");
 
   // Load parameters from private node handle.
-  std::string port;
+  std::string port, frame_name;
   int32_t baud;
   ros::param::param<std::string>("~port", port, "/dev/ttyUSB0");
   ros::param::param<int32_t>("~baud", baud, 115200);
+  ros::param::param<std::string>("~frame_name", frame_name, "imu_chr_position");
 
   serial::Serial ser;
   ser.setPort(port);
@@ -357,6 +358,7 @@ int main(int argc, char **argv)
           if (sensor.receive(&registers) == TRIGGER_PACKET)
           {
             header.stamp = ros::Time::now();
+            header.frame_id = frame_name;
             publishMsgs(registers, &n, header);
             ros::spinOnce();
           }

@@ -1,5 +1,6 @@
 <launch>
   <node pkg="um7" type="um7_driver" name="um7_imu_node" output="screen">
+    <param name="frame_name" value="imu_chr_position" />
   </node>
   <node pkg="imu_visualization" type="display_3D_visualization.py" name="um7_3D_visualization_node" output="screen">
 	<param name="imu_topic" value="imu/data" />
