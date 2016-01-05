@@ -293,7 +293,7 @@ int main(int argc, char **argv)
   // Load parameters from private node handle.
   std::string port, frame_name;
   int32_t baud;
-  ros::param::param<std::string>("~port", port, "/dev/ttyUSB0");
+  ros::param::param<std::string>("~port", port, "/dev/CHRoboticsIMU");
   ros::param::param<int32_t>("~baud", baud, 115200);
   ros::param::param<std::string>("~frame_name", frame_name, "imu_chr_position_link");
 
