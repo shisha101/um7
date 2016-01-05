@@ -1,10 +1,6 @@
 <launch>
-  <node pkg="um7" type="um7_driver" name="um7_imu_node" output="screen">
-    <param name="frame_name" value="imu_chr_position" />
-  </node>
-  <node pkg="imu_visualization" type="display_3D_visualization.py" name="um7_3D_visualization_node" output="screen">
-	<param name="imu_topic" value="imu/data" />
-	<param name="imu_name" value="CHRobotics_um7" />
-	<param name="mag_topic" value="/imu/mag_msg" />
-  </node>
+
+  <include file="$(find um7)/launch/um7_driver.launch"> </include>
+  <include file="$(find um7)/launch/um7_display.launch"> </include>
+
 </launch>
