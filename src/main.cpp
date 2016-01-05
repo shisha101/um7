@@ -54,6 +54,14 @@ const char VERSION[10] = "0.0.2";   // um7_driver version
 // us to publish everything we have.
 const uint8_t TRIGGER_PACKET = DREG_EULER_PHI_THETA;
 
+struct publish_topic_names{
+std::string imu_data_tn;
+std::string mag_vector_tn;
+std::string mag_msg_tn;
+std::string rpy_data_tn;
+std::string temp_tn;
+};
+
 /**
  * Function generalizes the process of writing an XYZ vector into consecutive
  * fields in UM7 registers.
@@ -198,13 +206,13 @@ bool handleResetService(um7::Comms* sensor,
  * Uses the register accessors to grab data from the IMU, and populate
  * the ROS messages which are output.
  */
-void publishMsgs(um7::Registers& r, ros::NodeHandle* n, const std_msgs::Header& header)
+void publishMsgs(um7::Registers& r, ros::NodeHandle* n, const std_msgs::Header& header, const publish_topic_names& topic_names_struct)
 {
-  static ros::Publisher imu_pub = n->advertise<sensor_msgs::Imu>("imu/data", 1, false);
-  static ros::Publisher mag_pub = n->advertise<geometry_msgs::Vector3Stamped>("imu/mag", 1, false);
-  static ros::Publisher mag_pub_2 = n->advertise<sensor_msgs::MagneticField>("imu/mag_msg", 1, false);
-  static ros::Publisher rpy_pub = n->advertise<geometry_msgs::Vector3Stamped>("imu/rpy", 1, false);
-  static ros::Publisher temp_pub = n->advertise<std_msgs::Float32>("imu/temperature", 1, false);
+  static ros::Publisher imu_pub = n->advertise<sensor_msgs::Imu>(topic_names_struct.imu_data_tn, 1, false);
+  static ros::Publisher mag_pub = n->advertise<geometry_msgs::Vector3Stamped>(topic_names_struct.mag_vector_tn, 1, false);
+  static ros::Publisher mag_pub_2 = n->advertise<sensor_msgs::MagneticField>(topic_names_struct.mag_msg_tn, 1, false);
+  static ros::Publisher rpy_pub = n->advertise<geometry_msgs::Vector3Stamped>(topic_names_struct.rpy_data_tn, 1, false);
+  static ros::Publisher temp_pub = n->advertise<std_msgs::Float32>(topic_names_struct.temp_tn, 1, false);
 
   if (imu_pub.getNumSubscribers() > 0)
   {
@@ -293,9 +301,15 @@ int main(int argc, char **argv)
   // Load parameters from private node handle.
   std::string port, frame_name;
   int32_t baud;
+  publish_topic_names publish_tns;
   ros::param::param<std::string>("~port", port, "/dev/CHRoboticsIMU");
   ros::param::param<int32_t>("~baud", baud, 115200);
   ros::param::param<std::string>("~frame_name", frame_name, "imu_chr_position_link");
+  ros::param::param<std::string>("~filterd_imu_data_topic_name", publish_tns.imu_data_tn, "/sensor/imu/um7/data");
+  ros::param::param<std::string>("~magnetic_field_msg_data_topic_name", publish_tns.mag_msg_tn, "/sensor/imu/um7/magfield_msg");
+  ros::param::param<std::string>("~magnetic_field_vector_data_topic_name", publish_tns.mag_vector_tn, "/sensor/imu/um7/magfield");
+  ros::param::param<std::string>("~rpy_topic_name", publish_tns.rpy_data_tn, "/sensor/imu/um7/rpy");
+  ros::param::param<std::string>("~imu_temperature_topic_name", publish_tns.temp_tn, "/sensor/imu/um7/temprature");
 
   serial::Serial ser;
   ser.setPort(port);
@@ -306,7 +320,6 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
 
   std_msgs::Header header;
-  ros::param::param<std::string>("~frame_id", header.frame_id, "imu_link");
 
   // Initialize covariance. The UM7 sensor does not provide covariance values so,
   //   by default, this driver provides a covariance array of all zeros indicating
@@ -359,7 +372,7 @@ int main(int argc, char **argv)
           {
             header.stamp = ros::Time::now();
             header.frame_id = frame_name;
-            publishMsgs(registers, &n, header);
+            publishMsgs(registers, &n, header, publish_tns);
             ros::spinOnce();
           }
         }
