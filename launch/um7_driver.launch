@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="um7" type="um7_driver" name="um7_imu_node" output="screen">
+    <param name="frame_name" value="imu_chr_position" />
+  </node>
+
+</launch>
