@@ -52,7 +52,7 @@ const char VERSION[10] = "0.0.2";   // um7_driver version
 
 // Don't try to be too clever. Arrival of this message triggers
 // us to publish everything we have.
-const uint8_t TRIGGER_PACKET = DREG_EULER_PHI_THETA;
+const uint8_t TRIGGER_PACKET = DREG_QUAT_AB;//DREG_EULER_PHI_THETA; // waits for quaternion instead of euler to trigger publish
 
 struct publish_topic_names{
 std::string imu_data_tn;
@@ -112,7 +112,7 @@ void sendCommand(um7::Comms* sensor, const um7::Accessor<RegT>& reg, std::string
  * Send configuration messages to the UM7, critically, to turn on the value outputs
  * which we require, and inject necessary configuration parameters.
  */
-void configureSensor(um7::Comms* sensor)
+void configureSensor(um7::Comms* sensor, int publish_freq)
 {
   um7::Registers r;
 
@@ -123,28 +123,28 @@ void configureSensor(um7::Comms* sensor)
       throw std::runtime_error("Unable to set CREG_COM_SETTINGS.");
     }
 
-    uint32_t raw_rate = (20 << RATE2_ALL_RAW_START);
+    uint32_t raw_rate = (0 << RATE2_ALL_RAW_START);
     r.comrate2.set(0, raw_rate);
     if (!sensor->sendWaitAck(r.comrate2))
     {
       throw std::runtime_error("Unable to set CREG_COM_RATES2.");
     }
 
-    uint32_t proc_rate = (20 << RATE4_ALL_PROC_START);
+    uint32_t proc_rate = (publish_freq << RATE4_ALL_PROC_START);
     r.comrate4.set(0, proc_rate);
     if (!sensor->sendWaitAck(r.comrate4))
     {
       throw std::runtime_error("Unable to set CREG_COM_RATES4.");
     }
 
-    uint32_t misc_rate = (20 << RATE5_EULER_START) | (20 << RATE5_QUAT_START);
+    uint32_t misc_rate = (publish_freq << RATE5_EULER_START) | (publish_freq << RATE5_QUAT_START);
     r.comrate5.set(0, misc_rate);
     if (!sensor->sendWaitAck(r.comrate5))
     {
       throw std::runtime_error("Unable to set CREG_COM_RATES5.");
     }
 
-    uint32_t health_rate = (5 << RATE6_HEALTH_START);  // note:  5 gives 2 hz rate
+    uint32_t health_rate = (1 << RATE6_HEALTH_START);  // note:  5 gives 2 hz rate
     r.comrate6.set(0, health_rate);
     if (!sensor->sendWaitAck(r.comrate6))
     {
@@ -300,7 +300,7 @@ int main(int argc, char **argv)
 
   // Load parameters from private node handle.
   std::string port, frame_name;
-  int32_t baud;
+  int32_t baud, rate;
   publish_topic_names publish_tns;
   ros::param::param<std::string>("~port", port, "/dev/CHRoboticsIMU");
   ros::param::param<int32_t>("~baud", baud, 115200);
@@ -310,6 +310,7 @@ int main(int argc, char **argv)
   ros::param::param<std::string>("~magnetic_field_vector_data_topic_name", publish_tns.mag_vector_tn, "/sensor/imu/um7/magfield");
   ros::param::param<std::string>("~rpy_topic_name", publish_tns.rpy_data_tn, "/sensor/imu/um7/rpy");
   ros::param::param<std::string>("~imu_temperature_topic_name", publish_tns.temp_tn, "/sensor/imu/um7/temprature");
+  ros::param::param<int32_t>("~rate", rate, 80);
 
   serial::Serial ser;
   ser.setPort(port);
@@ -360,7 +361,7 @@ int main(int argc, char **argv)
       try
       {
         um7::Comms sensor(&ser);
-        configureSensor(&sensor);
+        configureSensor(&sensor, rate);
         um7::Registers registers;
         ros::ServiceServer srv = n.advertiseService<um7::Reset::Request, um7::Reset::Response>(
             "reset", boost::bind(handleResetService, &sensor, _1, _2));
